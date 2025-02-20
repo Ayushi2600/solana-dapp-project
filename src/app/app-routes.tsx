@@ -6,12 +6,14 @@ const AccountListFeature = lazy(() => import('../components/account/account-list
 const AccountDetailFeature = lazy(() => import('../components/account/account-detail-feature'))
 const ClusterFeature = lazy(() => import('../components/cluster/cluster-feature'))
 const CounterFeature = lazy(() => import('../components/counter/counter-feature'))
+const BlogFeature = lazy(() => import('../components/blog/blog-feature'));
 const DashboardFeature = lazy(() => import('../components/dashboard/dashboard-feature'))
 
 const links: { label: string; path: string }[] = [
   { label: 'Account', path: '/account' },
   { label: 'Clusters', path: '/clusters' },
   { label: 'Counter Program', path: '/counter' },
+  { label: 'Blog', path: '/blog'}
 ]
 
 const routes: RouteObject[] = [
@@ -19,6 +21,7 @@ const routes: RouteObject[] = [
   { path: '/account/:address', element: <AccountDetailFeature /> },
   { path: '/counter', element: <CounterFeature /> },
   { path: '/clusters', element: <ClusterFeature /> },
+  { path: '/blog', element: <BlogFeature /> },
 ]
 
 export function AppRoutes() {
