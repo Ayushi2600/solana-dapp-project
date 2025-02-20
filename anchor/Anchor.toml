@@ -7,15 +7,17 @@ skip-lint = false
 
 [programs.devnet]
 counter = "HB8kmWXFqQQBGesAJWHHenbm1whhGo9xYpECj8bEz14A"
+blog = "FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA"
 
 [programs.localnet]
+counter = "HB8kmWXFqQQBGesAJWHHenbm1whhGo9xYpECj8bEz14A"
 blog = "FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
