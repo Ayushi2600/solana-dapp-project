@@ -1,174 +1,206 @@
-import { useConnection } from '@solana/wallet-adapter-react'
-import { Connection } from '@solana/web3.js'
-import { IconTrash } from '@tabler/icons-react'
-import { useQuery } from '@tanstack/react-query'
-import { ReactNode, useState } from 'react'
-import { AppModal } from '../ui/ui-layout'
-import { ClusterNetwork, useCluster } from './cluster-data-access'
+"use client";
 
-export function ExplorerLink({ path, label, className }: { path: string; label: string; className?: string }) {
-  const { getExplorerUrl } = useCluster()
-  return (
-    <a
-      href={getExplorerUrl(path)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={className ? className : `link font-mono`}
-    >
-      {label}
-    </a>
-  )
-}
+import { PublicKey } from "@solana/web3.js";
+import { ellipsify } from "../ui/ui-layout";
+import { ExplorerLink } from "../cluster/cluster-ui";
+import {
+  useBlogProgram,
+  useBlogProgramAccount,
+} from "./blog-data-access";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useState } from "react";
 
-export function ClusterChecker({ children }: { children: ReactNode }) {
-  const { cluster } = useCluster()
-  const { connection } = useConnection()
+/** =========================
+ *      BlogCreate
+ *  =========================
+ *  This component creates a new blog entry with a title and description.
+ */
+export function BlogCreate() {
+  const { createBlog } = useBlogProgram();
+  const { publicKey } = useWallet();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
-  const query = useQuery({
-    queryKey: ['version', { cluster, endpoint: connection.rpcEndpoint }],
-    queryFn: () => connection.getVersion(),
-    retry: 1,
-  })
-  if (query.isLoading) {
-    return null
+  const isFormValid = title.trim() !== "" && description.trim() !== "";
+
+  const handleSubmit = () => {
+    if (publicKey && isFormValid) {
+      createBlog.mutateAsync({ title, description, owner: publicKey });
+    }
+  };
+
+  if (!publicKey) {
+    return <p className="text-center">Connect your wallet</p>;
   }
-  if (query.isError || !query.data) {
-    return (
-      <div className="alert alert-warning text-warning-content/80 rounded-none flex justify-center">
-        <span>
-          Error connecting to cluster <strong>{cluster.name}</strong>
-        </span>
-        <button className="btn btn-xs btn-neutral" onClick={() => query.refetch()}>
-          Refresh
-        </button>
-      </div>
-    )
-  }
-  return children
-}
-
-export function ClusterUiSelect() {
-  const { clusters, setCluster, cluster } = useCluster()
-  return (
-    <div className="dropdown dropdown-end">
-      <label tabIndex={0} className="btn btn-primary rounded-btn">
-        {cluster.name}
-      </label>
-      <ul tabIndex={0} className="menu dropdown-content z-[1] p-2 shadow bg-base-100 rounded-box w-52 mt-4">
-        {clusters.map((item) => (
-          <li key={item.name}>
-            <button
-              className={`btn btn-sm ${item.active ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setCluster(item)}
-            >
-              {item.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-export function ClusterUiModal({ hideModal, show }: { hideModal: () => void; show: boolean }) {
-  const { addCluster } = useCluster()
-  const [name, setName] = useState('')
-  const [network, setNetwork] = useState<ClusterNetwork | undefined>()
-  const [endpoint, setEndpoint] = useState('')
 
   return (
-    <AppModal
-      title={'Add Cluster'}
-      hide={hideModal}
-      show={show}
-      submit={() => {
-        try {
-          new Connection(endpoint)
-          if (name) {
-            addCluster({ name, network, endpoint })
-            hideModal()
-          } else {
-            console.log('Invalid cluster name')
-          }
-        } catch {
-          console.log('Invalid cluster endpoint')
-        }
-      }}
-      submitLabel="Save"
-    >
+    <div className="flex flex-col items-center space-y-4">
+      <div className="text-xl font-semibold">Create a Blog Entry</div>
       <input
         type="text"
-        placeholder="Name"
-        className="input input-bordered w-full"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        placeholder="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="input input-bordered w-full max-w-sm"
       />
-      <input
-        type="text"
-        placeholder="Endpoint"
-        className="input input-bordered w-full"
-        value={endpoint}
-        onChange={(e) => setEndpoint(e.target.value)}
+      <textarea
+        placeholder="Description"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        className="textarea textarea-bordered w-full max-w-sm"
       />
-      <select
-        className="select select-bordered w-full"
-        value={network}
-        onChange={(e) => setNetwork(e.target.value as ClusterNetwork)}
+      <button
+        className="btn btn-primary"
+        onClick={handleSubmit}
+        disabled={createBlog.isPending || !isFormValid}
       >
-        <option value={undefined}>Select a network</option>
-        <option value={ClusterNetwork.Devnet}>Devnet</option>
-        <option value={ClusterNetwork.Testnet}>Testnet</option>
-        <option value={ClusterNetwork.Mainnet}>Mainnet</option>
-      </select>
-    </AppModal>
-  )
+        {createBlog.isPending ? "Creating..." : "Create"}
+      </button>
+    </div>
+  );
 }
 
-export function ClusterUiTable() {
-  const { clusters, setCluster, deleteCluster } = useCluster()
+/** =========================
+ *      BlogList
+ *  =========================
+ *  This component displays all existing blog entries in card form.
+ */
+export function BlogList() {
+  const { accounts, getProgramAccount } = useBlogProgram();
+
+  if (getProgramAccount.isLoading) {
+    return (
+      <div className="flex justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  if (!getProgramAccount.data?.value) {
+    return (
+      <div className="flex justify-center alert alert-info max-w-lg mx-auto">
+        <span>
+          Program account not found. Make sure you have deployed the program and
+          are on the correct cluster.
+        </span>
+      </div>
+    );
+  }
+
+  if (accounts.isLoading) {
+    return (
+      <div className="flex justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  const blogAccounts = accounts.data || [];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table border-4 border-separate border-base-300">
-        <thead>
-          <tr>
-            <th>Name/ Network / Endpoint</th>
-            <th className="text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clusters.map((item) => (
-            <tr key={item.name} className={item?.active ? 'bg-base-200' : ''}>
-              <td className="space-y-2">
-                <div className="whitespace-nowrap space-x-2">
-                  <span className="text-xl">
-                    {item?.active ? (
-                      item.name
-                    ) : (
-                      <button title="Select cluster" className="link link-secondary" onClick={() => setCluster(item)}>
-                        {item.name}
-                      </button>
-                    )}
-                  </span>
-                </div>
-                <span className="text-xs">Network: {item.network ?? 'custom'}</span>
-                <div className="whitespace-nowrap text-gray-500 text-xs">{item.endpoint}</div>
-              </td>
-              <td className="space-x-2 whitespace-nowrap text-center">
-                <button
-                  disabled={item?.active}
-                  className="btn btn-xs btn-default btn-outline"
-                  onClick={() => {
-                    if (!window.confirm('Are you sure?')) return
-                    deleteCluster(item)
-                  }}
-                >
-                  <IconTrash size={16} />
-                </button>
-              </td>
-            </tr>
+    <div className="space-y-6 mt-8">
+      {blogAccounts.length > 0 ? (
+        <div className="flex flex-wrap justify-center gap-6">
+          {blogAccounts.map((account) => (
+            <BlogCard
+              key={account.publicKey.toString()}
+              account={account.publicKey}
+            />
           ))}
-        </tbody>
-      </table>
+        </div>
+      ) : (
+        <div className="text-center">
+          <h2 className="text-2xl mb-2">No blog entries found</h2>
+          <p>Create one above to get started.</p>
+        </div>
+      )}
     </div>
-  )
+  );
+}
+
+/** =========================
+ *      BlogCard
+ *  =========================
+ *  Individual card to show the blog title, description, and controls for update/delete.
+ */
+function BlogCard({ account }: { account: PublicKey }) {
+  const { accountQuery, updateBlog, deleteBlog } = useBlogProgramAccount({
+    account,
+  });
+  const { publicKey } = useWallet();
+  const [newDescription, setNewDescription] = useState("");
+  const title = accountQuery.data?.title;
+  const description = accountQuery.data?.description;
+
+  const isFormValid = newDescription.trim() !== "";
+
+  const handleUpdate = () => {
+    if (publicKey && isFormValid && title) {
+      updateBlog.mutateAsync({
+        title,
+        description: newDescription,
+        owner: publicKey,
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm("Are you sure you want to close this blog entry?")) {
+      return;
+    }
+    if (title && publicKey) {
+      deleteBlog.mutateAsync({ title, owner: publicKey });
+    }
+  };
+
+  if (accountQuery.isLoading) {
+    return (
+      <div className="card w-64 bg-base-100 shadow-xl flex justify-center items-center p-4">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card w-64 bg-base-100 shadow-xl border border-base-300">
+      <div className="card-body">
+        <h2 className="card-title text-xl break-words">
+          {title ?? "Untitled"}
+        </h2>
+        <p className="mb-2 break-words">{description ?? "No description"}</p>
+
+        <div className="flex flex-col space-y-2">
+          <textarea
+            placeholder="New description"
+            value={newDescription}
+            onChange={(e) => setNewDescription(e.target.value)}
+            className="textarea textarea-bordered w-full"
+          />
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleUpdate}
+            disabled={updateBlog.isPending || !isFormValid}
+          >
+            {updateBlog.isPending ? "Updating..." : "Update"}
+          </button>
+        </div>
+
+        <div className="divider"></div>
+
+        <div className="text-center space-y-2">
+          <ExplorerLink
+            path={`account/${account}`}
+            label={ellipsify(account.toString())}
+          />
+          <button
+            className="btn btn-secondary btn-outline btn-sm"
+            onClick={handleDelete}
+            disabled={deleteBlog.isPending}
+          >
+            {deleteBlog.isPending ? "Closing..." : "Close"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
