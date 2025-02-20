@@ -32,8 +32,13 @@ export type Blog = {
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "title"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",
@@ -82,8 +87,13 @@ export type Blog = {
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "title"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",
@@ -128,9 +138,13 @@ export type Blog = {
           "pda": {
             "seeds": [
               {
-                "kind": "account",
-                "path": "blog_entry.title",
-                "account": "blogEntryState"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",

@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 
 declare_id!("FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA");
 
+pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
+
 #[program]
 pub mod blog {
     use super::*;
@@ -22,8 +24,8 @@ pub mod blog {
         ctx: Context<UpdateBlog>,
         new_description: String,
     ) -> Result<()> {
-        msg!("Blog Entry Updated");
-        msg!("New Description: {}", new_description);
+        msg!("Journal Entry Updated");
+        msg!("New Message: {}", new_description);
     
         let blog_entry = &mut ctx.accounts.blog_entry;
         blog_entry.description = new_description;
@@ -43,9 +45,9 @@ pub struct CreateBlog<'info> {
     #[account(
         init,
         payer = owner,
-        seeds = [title.as_bytes(), owner.key().as_ref()],
+        seeds = [b"blog", owner.key().as_ref()],
         bump,
-        space = 8 + 32 + 4 + title.len() + 4 + description.len()
+        space = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE,
     )]
     pub blog_entry: Account<'info, BlogEntryState>,
 
@@ -58,9 +60,9 @@ pub struct CreateBlog<'info> {
 pub struct UpdateBlog<'info> {
     #[account(
         mut,
-        seeds = [blog_entry.title.as_bytes(), owner.key().as_ref()], 
+        seeds = [b"blog", owner.key().as_ref()], 
         bump,
-        realloc = 8 + 32 + 4 + blog_entry.title.len() + 4 + blog_entry.description.len(), // Use journal_entry.message instead of message
+        realloc = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE, // Use journal_entry.message instead of message
         realloc::payer = owner,
         realloc::zero = false, // Keep existing data instead of clearing it
     )]
@@ -77,7 +79,7 @@ pub struct UpdateBlog<'info> {
 pub struct DeleteBlog<'info> {
     #[account( 
         mut, 
-        seeds = [title.as_bytes(), owner.key().as_ref()], 
+        seeds = [b"blog", owner.key().as_ref()], 
         bump, 
         close = owner,
     )]
@@ -88,8 +90,13 @@ pub struct DeleteBlog<'info> {
 }
 
 #[account]
+#[derive(InitSpace)] 
 pub struct BlogEntryState {
     pub owner: Pubkey,
+
+    #[max_len(100)]
     pub title: String,
+
+    #[max_len(500)]
     pub description: String
 }

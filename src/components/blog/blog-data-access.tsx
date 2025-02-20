@@ -1,5 +1,3 @@
-'use client'
-
 import { getBlogProgram, getBlogProgramId } from '@project/anchor';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { Cluster, PublicKey, SystemProgram } from '@solana/web3.js';
@@ -16,9 +14,9 @@ interface CreateEntryArgs {
   owner: PublicKey;
 }
 
-/** 
+/**
  * useBlogProgram
- * 
+ *
  * Provides:
  *  - program: The Anchor program instance
  *  - programId: The program's PublicKey
@@ -33,7 +31,10 @@ export function useBlogProgram() {
   const provider = useAnchorProvider();
 
   // Derive the correct program ID based on the current cluster
-  const programId = useMemo(() => getBlogProgramId(cluster.network as Cluster), [cluster]);
+  const programId = useMemo(
+    () => getBlogProgramId(cluster.network as Cluster),
+    [cluster]
+  );
 
   // Get an instance of the program from your Anchor provider
   const program = getBlogProgram(provider);
@@ -54,14 +55,12 @@ export function useBlogProgram() {
   const createBlog = useMutation<string, Error, CreateEntryArgs>({
     mutationKey: ['blogEntry', 'create', { cluster }],
     mutationFn: async ({ title, description, owner }) => {
-      // Derive the PDA address for the blog entry
+      // Derive the PDA address for the blog entry using static seed "blog"
       const [blogEntryPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from(title), owner.toBuffer()],
+        [Buffer.from("blog"), owner.toBuffer()],
         program.programId
       );
 
-      // The name "blogEntry" in .accounts({}) must match what the IDL expects.
-      // If your IDL has it as "blog_entry", update accordingly.
       return program.methods
         .createBlog(title, description)
         .accounts({
@@ -89,9 +88,9 @@ export function useBlogProgram() {
   };
 }
 
-/** 
+/**
  * useBlogProgramAccount
- * 
+ *
  * Provides:
  *  - accountQuery: Query fetching a single BlogEntryState account
  *  - updateBlog: Mutation to update a blog entry
@@ -103,10 +102,10 @@ export function useBlogProgramAccount({ account }: { account: PublicKey }) {
   const transactionToast = useTransactionToast();
   const { program, accounts } = useBlogProgram();
 
-  // If you want to use the same dynamic ID from the cluster, you can use
-  // the one returned from useBlogProgram() instead of a hard-coded ID.
-  // For now, you can keep this if you prefer:
-  const programId = new PublicKey('FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA');
+  // Use the same programId as used in useBlogProgram (or hard-code if needed)
+  const programId = new PublicKey(
+    'FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA'
+  );
 
   // Fetch the individual blog entry data by its PDA
   const accountQuery = useQuery({
@@ -115,10 +114,14 @@ export function useBlogProgramAccount({ account }: { account: PublicKey }) {
   });
 
   // Update Blog Entry
-  const updateBlog = useMutation<string, Error, { title: string; description: string; owner: PublicKey }>({
+  const updateBlog = useMutation<
+    string,
+    Error,
+    { description: string; owner: PublicKey }
+  >({
     mutationKey: ['blogEntry', 'update', { cluster }],
     mutationFn: async ({ description, owner }) => {
-      // The .accounts() must match the IDL's required accounts
+      // In this case, we already have the blog entry account PDA (passed as "account")
       return program.methods
         .updateBlog(description)
         .accounts({
@@ -141,9 +144,9 @@ export function useBlogProgramAccount({ account }: { account: PublicKey }) {
   const deleteBlog = useMutation<string, Error, { title: string; owner: PublicKey }>({
     mutationKey: ['blog', 'deleteBlog', { cluster, account }],
     mutationFn: async ({ title, owner }) => {
-      // Derive the same PDA used for creation
+      // Derive the PDA address for deletion using the same static seed "blog"
       const [blogEntryPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from(title), owner.toBuffer()],
+        [Buffer.from("blog"), owner.toBuffer()],
         program.programId
       );
 

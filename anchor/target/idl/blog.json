@@ -26,8 +26,13 @@
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "title"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",
@@ -76,8 +81,13 @@
           "pda": {
             "seeds": [
               {
-                "kind": "arg",
-                "path": "title"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",
@@ -122,9 +132,13 @@
           "pda": {
             "seeds": [
               {
-                "kind": "account",
-                "path": "blog_entry.title",
-                "account": "BlogEntryState"
+                "kind": "const",
+                "value": [
+                  98,
+                  108,
+                  111,
+                  103
+                ]
               },
               {
                 "kind": "account",

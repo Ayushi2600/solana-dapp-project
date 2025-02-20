@@ -25,6 +25,7 @@ export function BlogCreate() {
 
   const handleSubmit = () => {
     if (publicKey && isFormValid) {
+      // Create uses the static PDA derivation, so we pass the title only for logging.
       createBlog.mutateAsync({ title, description, owner: publicKey });
     }
   };
@@ -136,8 +137,8 @@ function BlogCard({ account }: { account: PublicKey }) {
 
   const handleUpdate = () => {
     if (publicKey && isFormValid && title) {
+      // Here, title is passed for logging purposes. The PDA is derived using static seed.
       updateBlog.mutateAsync({
-        title,
         description: newDescription,
         owner: publicKey,
       });
@@ -149,6 +150,7 @@ function BlogCard({ account }: { account: PublicKey }) {
       return;
     }
     if (title && publicKey) {
+      // Similarly, title is passed only for logging; PDA derivation uses the static seed.
       deleteBlog.mutateAsync({ title, owner: publicKey });
     }
   };
