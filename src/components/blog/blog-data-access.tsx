@@ -1,3 +1,5 @@
+'use client'
+
 import { getBlogProgram, getBlogProgramId } from '@project/anchor'
 import { useConnection } from '@solana/wallet-adapter-react'
 import { Cluster, Keypair, PublicKey } from '@solana/web3.js'
@@ -8,6 +10,13 @@ import toast from 'react-hot-toast'
 import { useCluster } from '../cluster/cluster-data-access'
 import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../ui/ui-layout'
+import { title } from 'node-stdlib-browser/mock/process'
+
+interface CreateEntryArgs {
+    title: String;
+    description: String;
+    owner: PublicKey;
+}
 
 export function useBlogProgram() {
   const { connection } = useConnection()
@@ -22,6 +31,25 @@ export function useBlogProgram() {
     queryFn: () => program.account.blogEntryState.all(),
   })
 
+  const getProgramAccount = useQuery({
+    queryKey: ['get-program-account', {cluster}],
+    queryFn: () => connection.getParsedAccountInfo(programId),
+  })
+
+  const createBlog = useMutation<String, Error, CreateEntryArgs>({
+    mutationKey: [`blogEntry`, `create`, {cluster}],
+    mutationFn: async ({ title, description, owner}) => {
+        return program.methods.createBlog(title, description, {accounts: {owner}}.rpc());
+    },
+    onSuccess: (signature) => {
+        transactionToast(signature);
+        accounts.refetch();
+    },
+    onError: (error) => {
+        toast.error(`Error creating a blog: ${error.message}`);
+    }
+  });
+
   const initialize = useMutation({
     mutationKey: ['blog', 'create', { cluster }],
     mutationFn: ({ keypair, title, description }) =>
@@ -35,7 +63,7 @@ export function useBlogProgram() {
       return accounts.refetch()
     },
     onError: () => toast.error('Failed to create blog entry'),
-  })
+  });
 
   return {
     program,
@@ -45,45 +73,3 @@ export function useBlogProgram() {
   }
 }
 
-export function useBlogProgramAccount({ account }: { account: PublicKey }) {
-  const { cluster } = useCluster()
-  const transactionToast = useTransactionToast()
-  const { program, accounts } = useBlogProgram()
-
-  const accountQuery = useQuery({
-    queryKey: ['blog', 'fetch', { cluster, account }],
-    queryFn: () => program.account.blogEntryState.fetch(account),
-  })
-
-  const updateMutation = useMutation({
-    mutationKey: ['blog', 'update', { cluster, account }],
-    mutationFn: (newDescription) =>
-      program.methods
-        .updateBlog(newDescription)
-        .accounts({ blogEntry: account, owner: provider.wallet.publicKey })
-        .rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accountQuery.refetch()
-    },
-  })
-
-  const deleteMutation = useMutation({
-    mutationKey: ['blog', 'delete', { cluster, account }],
-    mutationFn: () =>
-      program.methods
-        .deleteBlog()
-        .accounts({ blogEntry: account, owner: provider.wallet.publicKey })
-        .rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accounts.refetch()
-    },
-  })
-
-  return {
-    accountQuery,
-    updateMutation,
-    deleteMutation,
-  }
-}
