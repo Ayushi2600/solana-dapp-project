@@ -3,17 +3,14 @@
 import { PublicKey } from "@solana/web3.js";
 import { ellipsify } from "../ui/ui-layout";
 import { ExplorerLink } from "../cluster/cluster-ui";
-import {
-  useBlogProgram,
-  useBlogProgramAccount,
-} from "./blog-data-access";
+import { useBlogProgram, useBlogProgramAccount } from "./blog-data-access";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState } from "react";
 
 /** =========================
  *      BlogCreate
- *  =========================
- *  This component creates a new blog entry with a title and description.
+ * =========================
+ * This component creates a new blog entry with a title and description.
  */
 export function BlogCreate() {
   const { createBlog } = useBlogProgram();
@@ -25,7 +22,7 @@ export function BlogCreate() {
 
   const handleSubmit = () => {
     if (publicKey && isFormValid) {
-      // Create uses the static PDA derivation, so we pass the title only for logging.
+      // Create uses the PDA derivation using seeds: [b"blog", owner, title]
       createBlog.mutateAsync({ title, description, owner: publicKey });
     }
   };
@@ -36,7 +33,7 @@ export function BlogCreate() {
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <div className="text-xl font-semibold">Create a Blog Entry</div>
+      <h2 className="text-xl font-semibold">Create a Blog Entry</h2>
       <input
         type="text"
         placeholder="Title"
@@ -63,8 +60,8 @@ export function BlogCreate() {
 
 /** =========================
  *      BlogList
- *  =========================
- *  This component displays all existing blog entries in card form.
+ * =========================
+ * This component displays all existing blog entries in card form.
  */
 export function BlogList() {
   const { accounts, getProgramAccount } = useBlogProgram();
@@ -81,8 +78,7 @@ export function BlogList() {
     return (
       <div className="flex justify-center alert alert-info max-w-lg mx-auto">
         <span>
-          Program account not found. Make sure you have deployed the program and
-          are on the correct cluster.
+          Program account not found. Make sure you have deployed the program and are on the correct cluster.
         </span>
       </div>
     );
@@ -121,15 +117,14 @@ export function BlogList() {
 
 /** =========================
  *      BlogCard
- *  =========================
- *  Individual card to show the blog title, description, and controls for update/delete.
+ * =========================
+ * Individual card to show the blog title, description, and controls for update/delete.
  */
 function BlogCard({ account }: { account: PublicKey }) {
-  const { accountQuery, updateBlog, deleteBlog } = useBlogProgramAccount({
-    account,
-  });
+  const { accountQuery, updateBlog, deleteBlog } = useBlogProgramAccount({ account });
   const { publicKey } = useWallet();
   const [newDescription, setNewDescription] = useState("");
+  // For update/delete PDA derivation, we need the original title.
   const title = accountQuery.data?.title;
   const description = accountQuery.data?.description;
 
@@ -137,9 +132,10 @@ function BlogCard({ account }: { account: PublicKey }) {
 
   const handleUpdate = () => {
     if (publicKey && isFormValid && title) {
-      // Here, title is passed for logging purposes. The PDA is derived using static seed.
+      // Pass the title (used during creation) to re-derive the PDA.
       updateBlog.mutateAsync({
-        description: newDescription,
+        title,
+        newDescription,
         owner: publicKey,
       });
     }
@@ -150,7 +146,6 @@ function BlogCard({ account }: { account: PublicKey }) {
       return;
     }
     if (title && publicKey) {
-      // Similarly, title is passed only for logging; PDA derivation uses the static seed.
       deleteBlog.mutateAsync({ title, owner: publicKey });
     }
   };
@@ -166,11 +161,8 @@ function BlogCard({ account }: { account: PublicKey }) {
   return (
     <div className="card w-64 bg-base-100 shadow-xl border border-base-300">
       <div className="card-body">
-        <h2 className="card-title text-xl break-words">
-          {title ?? "Untitled"}
-        </h2>
+        <h2 className="card-title text-xl break-words">{title ?? "Untitled"}</h2>
         <p className="mb-2 break-words">{description ?? "No description"}</p>
-
         <div className="flex flex-col space-y-2">
           <textarea
             placeholder="New description"
@@ -186,12 +178,10 @@ function BlogCard({ account }: { account: PublicKey }) {
             {updateBlog.isPending ? "Updating..." : "Update"}
           </button>
         </div>
-
         <div className="divider"></div>
-
         <div className="text-center space-y-2">
           <ExplorerLink
-            path={`account/${account}`}
+            path={`account/${account.toString()}`}
             label={ellipsify(account.toString())}
           />
           <button

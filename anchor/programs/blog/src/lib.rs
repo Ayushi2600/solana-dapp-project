@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA");
+declare_id!("6oppHjv5Nzxg2DrrtHHQZ7qAgMVDszTf9JHBMgYNt5dU");
 
 pub const ANCHOR_DISCRIMINATOR_SIZE: usize = 8;
 
@@ -9,9 +9,10 @@ pub mod blog {
     use super::*;
 
     pub fn create_blog(ctx: Context<CreateBlog>, title: String, description: String) -> Result<()> {
-        msg!("Creating a blog!!!");
-        msg!("Title: {}", title);
-        msg!("Description: {}", description);
+       msg!("Creating a blog!!!");
+       msg!("Title: {}", title);
+       msg!("Description: {}", description);
+
 
         let blog_entry = &mut ctx.accounts.blog_entry;
         blog_entry.owner = ctx.accounts.owner.key();
@@ -22,9 +23,10 @@ pub mod blog {
 
     pub fn update_blog(
         ctx: Context<UpdateBlog>,
+        title: String,
         new_description: String,
     ) -> Result<()> {
-        msg!("Journal Entry Updated");
+        msg!("Blog Entry Updated for title: {}", title);
         msg!("New Message: {}", new_description);
     
         let blog_entry = &mut ctx.accounts.blog_entry;
@@ -32,7 +34,6 @@ pub mod blog {
     
         Ok(())
     }
-
     pub fn delete_blog(ctx: Context<DeleteBlog>, title: String) -> Result<()> {
         msg!("Delete Title: {}", title);
         Ok(())
@@ -45,7 +46,7 @@ pub struct CreateBlog<'info> {
     #[account(
         init,
         payer = owner,
-        seeds = [b"blog", owner.key().as_ref()],
+        seeds = [b"blog", owner.key().as_ref(), title.as_bytes()],
         bump,
         space = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE,
     )]
@@ -57,10 +58,11 @@ pub struct CreateBlog<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(title: String)]
 pub struct UpdateBlog<'info> {
     #[account(
         mut,
-        seeds = [b"blog", owner.key().as_ref()], 
+        seeds = [b"blog", owner.key().as_ref(), title.as_bytes()], 
         bump,
         realloc = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE, // Use journal_entry.message instead of message
         realloc::payer = owner,
@@ -79,7 +81,7 @@ pub struct UpdateBlog<'info> {
 pub struct DeleteBlog<'info> {
     #[account( 
         mut, 
-        seeds = [b"blog", owner.key().as_ref()], 
+        seeds = [b"blog", owner.key().as_ref(), title.as_bytes()], 
         bump, 
         close = owner,
     )]

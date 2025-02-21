@@ -30,36 +30,38 @@ export function useBlogProgram() {
   const transactionToast = useTransactionToast();
   const provider = useAnchorProvider();
 
-  // Derive the correct program ID based on the current cluster
+  // Derive the correct program ID based on the current cluster.
   const programId = useMemo(
     () => getBlogProgramId(cluster.network as Cluster),
     [cluster]
   );
 
-  // Get an instance of the program from your Anchor provider
+  // Get an instance of the program from your Anchor provider.
   const program = getBlogProgram(provider);
 
-  // Fetch all blog entries
+  // Fetch all blog entries.
   const accounts = useQuery({
     queryKey: ['blog', 'all', { cluster }],
     queryFn: () => program.account.blogEntryState.all(),
   });
 
-  // Fetch specific program account info (if needed)
+  // Fetch specific program account info (if needed).
   const getProgramAccount = useQuery({
     queryKey: ['get-program-account', { cluster }],
     queryFn: () => connection.getParsedAccountInfo(programId),
   });
 
-  // Create Blog Entry
+  // Create Blog Entry using PDA seeds: [b"blog", owner, title]
   const createBlog = useMutation<string, Error, CreateEntryArgs>({
     mutationKey: ['blogEntry', 'create', { cluster }],
     mutationFn: async ({ title, description, owner }) => {
-      // Derive the PDA address for the blog entry using static seed "blog"
       const [blogEntryPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("blog"), owner.toBuffer()],
+        [Buffer.from("blog"), owner.toBuffer(), Buffer.from(title)],
         program.programId
       );
+      console.log("Derived PDA:", blogEntryPDA.toBase58());
+      console.log("Owner Buffer:", owner.toBuffer().toString('hex'));
+      console.log("Title Buffer:", Buffer.from(title).toString('hex'));
 
       return program.methods
         .createBlog(title, description)
@@ -95,37 +97,40 @@ export function useBlogProgram() {
  *  - accountQuery: Query fetching a single BlogEntryState account
  *  - updateBlog: Mutation to update a blog entry
  *  - deleteBlog: Mutation to delete (close) a blog entry
- *  - programId: The program's PublicKey (hard-coded or derived)
+ *  - programId: The program's PublicKey
  */
 export function useBlogProgramAccount({ account }: { account: PublicKey }) {
   const { cluster } = useCluster();
   const transactionToast = useTransactionToast();
   const { program, accounts } = useBlogProgram();
 
-  // Use the same programId as used in useBlogProgram (or hard-code if needed)
-  const programId = new PublicKey(
-    'FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA'
-  );
+  // Use the same programId as used in useBlogProgram.
+  const programId = new PublicKey('FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA');
 
-  // Fetch the individual blog entry data by its PDA
+  // Fetch the individual blog entry data by its PDA.
   const accountQuery = useQuery({
     queryKey: ['blog', 'fetch', { cluster, account }],
     queryFn: () => program.account.blogEntryState.fetch(account),
   });
 
-  // Update Blog Entry
+  // Update Blog Entry.
+  // Pass the original title so that the PDA can be re-derived.
   const updateBlog = useMutation<
     string,
     Error,
-    { description: string; owner: PublicKey }
+    { title: string; newDescription: string; owner: PublicKey }
   >({
     mutationKey: ['blogEntry', 'update', { cluster }],
-    mutationFn: async ({ description, owner }) => {
-      // In this case, we already have the blog entry account PDA (passed as "account")
+    mutationFn: async ({ title, newDescription, owner }) => {
+      const [blogEntryPDA] = PublicKey.findProgramAddressSync(
+        [Buffer.from("blog"), owner.toBuffer(), Buffer.from(title)],
+        program.programId
+      );
+
       return program.methods
-        .updateBlog(description)
+        .updateBlog(title, newDescription)
         .accounts({
-          blogEntry: account,
+          blogEntry: blogEntryPDA,
           owner,
           system_program: SystemProgram.programId,
         })
@@ -140,16 +145,16 @@ export function useBlogProgramAccount({ account }: { account: PublicKey }) {
     },
   });
 
-  // Delete Blog Entry
+  // Delete Blog Entry.
+  // Pass the same title for PDA derivation.
   const deleteBlog = useMutation<string, Error, { title: string; owner: PublicKey }>({
     mutationKey: ['blog', 'deleteBlog', { cluster, account }],
     mutationFn: async ({ title, owner }) => {
-      // Derive the PDA address for deletion using the same static seed "blog"
       const [blogEntryPDA] = PublicKey.findProgramAddressSync(
-        [Buffer.from("blog"), owner.toBuffer()],
+        [Buffer.from("blog"), owner.toBuffer(), Buffer.from(title)],
         program.programId
       );
-
+  
       return program.methods
         .deleteBlog(title)
         .accounts({

@@ -1,5 +1,5 @@
 {
-  "address": "FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA",
+  "address": "6oppHjv5Nzxg2DrrtHHQZ7qAgMVDszTf9JHBMgYNt5dU",
   "metadata": {
     "name": "blog",
     "version": "0.1.0",
@@ -37,6 +37,10 @@
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -92,6 +96,10 @@
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -143,6 +151,10 @@
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -158,6 +170,10 @@
         }
       ],
       "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
         {
           "name": "new_description",
           "type": "string"

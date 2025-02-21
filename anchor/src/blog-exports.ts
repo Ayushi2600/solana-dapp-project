@@ -32,7 +32,7 @@ export function getBlogProgramId(cluster: Cluster) {
 // Generate Blog PDA (Program Derived Address) based on title and owner
 export async function getBlogPda(title: string, owner: PublicKey) {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(title), owner.toBuffer()],
+    [Buffer.from("blog"), owner.toBuffer(), Buffer.from(title)],
     BLOG_PROGRAM_ID
   )
 }

@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/blog.json`.
  */
 export type Blog = {
-  "address": "FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA",
+  "address": "6oppHjv5Nzxg2DrrtHHQZ7qAgMVDszTf9JHBMgYNt5dU",
   "metadata": {
     "name": "blog",
     "version": "0.1.0",
@@ -43,6 +43,10 @@ export type Blog = {
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -98,6 +102,10 @@ export type Blog = {
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -149,6 +157,10 @@ export type Blog = {
               {
                 "kind": "account",
                 "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "title"
               }
             ]
           }
@@ -164,6 +176,10 @@ export type Blog = {
         }
       ],
       "args": [
+        {
+          "name": "title",
+          "type": "string"
+        },
         {
           "name": "newDescription",
           "type": "string"
