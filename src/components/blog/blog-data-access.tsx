@@ -14,16 +14,7 @@ interface CreateEntryArgs {
   owner: PublicKey;
 }
 
-/**
- * useBlogProgram
- *
- * Provides:
- *  - program: The Anchor program instance
- *  - programId: The program's PublicKey
- *  - accounts: Query fetching all BlogEntryState accounts
- *  - getProgramAccount: Query fetching parsed account info for the program
- *  - createBlog: Mutation to create a new blog entry
- */
+// useBlogProgram
 export function useBlogProgram() {
   const { connection } = useConnection();
   const { cluster } = useCluster();
@@ -64,29 +55,31 @@ export function useBlogProgram() {
       console.log("Title Buffer:", Buffer.from(title).toString('hex'));
 
       return program.methods
-        .createBlog(title, description)
+        .createBlog(title, description) //Calls the program method createBlog with the title and description
         .accounts({
-          blogEntry: blogEntryPDA,
-          owner,
-          system_program: SystemProgram.programId,
+          blogEntry: blogEntryPDA, //The derived PDA for the blog entry
+          owner, //The owner’s public key
+          system_program: SystemProgram.programId, //The system program’s public key (for account creation)
         })
-        .rpc();
+        .rpc(); //Calls to send the transaction
     },
-    onSuccess: (signature) => {
-      transactionToast(signature);
-      accounts.refetch();
+    onSuccess: (signature) => { // Displays a toast using transactionToast
+      transactionToast(signature); 
+      accounts.refetch(); //Refetches the accounts query to update the list of blog entries
     },
+    // Shows an error toast if something goes wrong
     onError: (error) => {
-      toast.error(`Error creating a blog: ${error.message}`);
+      toast.error(`Error creating a blog: ${error.message}`); 
     },
   });
 
+  // Returns an object from useBlogProgram Hook
   return {
-    program,
-    programId,
-    accounts,
-    getProgramAccount,
-    createBlog,
+    program, //The program instance
+    programId, //The program’s public key
+    accounts, //Query for all blog entries
+    getProgramAccount, //Query for program account info
+    createBlog, //Mutation for creating a new blog entry
   };
 }
 

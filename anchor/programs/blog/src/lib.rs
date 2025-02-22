@@ -64,7 +64,7 @@ pub struct UpdateBlog<'info> {
         mut,
         seeds = [b"blog", owner.key().as_ref(), title.as_bytes()], 
         bump,
-        realloc = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE, // Use journal_entry.message instead of message
+        realloc = ANCHOR_DISCRIMINATOR_SIZE + BlogEntryState::INIT_SPACE,
         realloc::payer = owner,
         realloc::zero = false, // Keep existing data instead of clearing it
     )]

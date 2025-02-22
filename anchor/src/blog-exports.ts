@@ -22,7 +22,7 @@ export function getBlogProgramId(cluster: Cluster) {
   switch (cluster) {
     case 'devnet':
     case 'testnet':
-      return new PublicKey('FLbwydxCq8AT5PbhiqZpvgTAXv4VnfvbYjMR7cg5WSLA') // Change to deployed program ID
+      return new PublicKey('6oppHjv5Nzxg2DrrtHHQZ7qAgMVDszTf9JHBMgYNt5dU') // deployed program ID
     case 'mainnet-beta':
     default:
       return BLOG_PROGRAM_ID
